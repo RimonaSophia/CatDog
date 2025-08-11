@@ -142,18 +142,18 @@ for epoch in range(1, epochs + 1):
     if val_loss < best_val:
         best_val = val_loss
         bad_epochs = 0
-        torch.save(model.state_dict(), "best_model_catdog.pt")
+        torch.save(model.state_dict(), "best_model_dogcat.pt")
     else:
         bad_epochs += 1
         if bad_epochs >= patience:
             print(f"Early stopping at epoch {epoch} (best val loss {best_val:.4f})")
             break
 
-print("Training done. Best model saved to best_model_catdog.pt")
+print("Training done. Best model saved to best_model_dogcat.pt")
 
 # ----------- Export artifacts -----------
 pathlib.Path("artifacts").mkdir(exist_ok=True)
-shutil.copy("best_model_catdog.pt", "artifacts/best_model_catdog.pt")
+shutil.copy("best_model_catdog.pt", "artifacts/best_model_dogcat.pt")
 with open("artifacts/classes.json", "w") as f:
     json.dump(train_data.classes, f)
-print("Wrote artifacts/best_model_catdog.pt and artifacts/classes.json")
+print("Wrote artifacts/best_model_dogcat.pt and artifacts/classes.json")
