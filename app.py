@@ -28,7 +28,7 @@ def build_model(num_classes=2):
 
 # ----- Load artifacts -----
 classes_path = os.path.join(ROOT, "artifacts", "classes.json")
-weights_path = os.path.join(ROOT, "artifacts", "best_model_catdog.pt")
+weights_path = os.path.join(ROOT, "artifacts", "best_model_dogcat.pt")
 
 if not os.path.exists(classes_path) or not os.path.exists(weights_path):
     raise FileNotFoundError(
