@@ -5,55 +5,65 @@ from torchvision import models, transforms
 from PIL import Image
 import gradio as gr
 
-DEVICE = torch.device("cpu")  # simple and portable
+# ---------- Device ----------
+DEVICE = torch.device("cpu")  # Spaces CPU is fine; change if you enable GPU
 
-# must match your val transforms
+# ---------- Transforms ----------
+# IMPORTANT: match whatever you used at validation/inference time during training.
 TF = transforms.Compose([
     transforms.Resize((224, 224)),
-    transforms.ToTensor()
+    transforms.ToTensor(),
+    # If you trained with ImageNet normalization, uncomment:
+    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
+# ---------- Model ----------
 def build_model(num_classes=2):
+    # Use weights API when available; fallback to pretrained=True for older torchvision
     try:
         weights = models.ResNet18_Weights.DEFAULT
-        model = models.resnet18(weights=weights)
+        m = models.resnet18(weights=weights)
     except Exception:
-        model = models.resnet18(pretrained=True)
-    for p in model.parameters():
+        m = models.resnet18(pretrained=True)
+    for p in m.parameters():
         p.requires_grad = False
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
-    return model
+    m.fc = nn.Linear(m.fc.in_features, num_classes)
+    return m
 
-# load once
+# Load classes
 with open("artifacts/classes.json") as f:
-    CLASSES = json.load(f)
+    CLASSES = json.load(f)  # e.g. ["cats", "dogs"]
 
+# Build + load weights
 model = build_model(num_classes=len(CLASSES))
-state = torch.load("artifacts/best_model_dogcat.pt", map_location="cpu")
-model.load_state_dict(state)
-model.eval().to(DEVICE)
+state = torch.load("artifacts/best_model_catdog.pt", map_location="cpu")  # <- ensure filename matches
+model.load_state_dict(state, strict=True)
+model.to(DEVICE).eval()
 
+# Optional: warmup to surface any runtime errors early (e.g., missing files)
+with torch.inference_mode():
+    _ = model(torch.zeros(1, 3, 224, 224))
+
+# ---------- Prediction ----------
 @torch.inference_mode()
 def predict(img: Image.Image):
-    x = TF(img.convert("RGB")).unsqueeze(0).to(DEVICE)  # [1,3,224,224]
-    logits = MODEL(x)
-    probs = torch.softmax(logits, dim=1).cpu().numpy()[0]
-    idx = int(probs.argmax())
-    label = CLASSES[idx]
-    return f"{label} ({probs[idx]:.3f})", {CLASSES[i]: float(p) for i, p in enumerate(probs)}
+    try:
+        x = TF(img.convert("RGB")).unsqueeze(0).to(DEVICE)  # [1,3,224,224]
+        logits = model(x)  # <-- fixed: use `model`, not `MODEL`
+        probs = torch.softmax(logits, dim=1)[0].cpu().tolist()
+        idx = int(torch.tensor(probs).argmax().item())
+        label = CLASSES[idx]
+        # Gradio Label expects {class_name: prob}
+        prob_dict = {CLASSES[i]: float(p) for i, p in enumerate(probs)}
+        return f"{label} ({probs[idx]:.3f})", prob_dict
+    except Exception as e:
+        # Return readable error in the UI instead of crashing
+        return f"Error: {type(e).__name__}: {e}", {}
 
-
+# ---------- Gradio UI ----------
 demo = gr.Interface(
     fn=predict,
     inputs=gr.Image(type="pil", label="Upload a cat or dog"),
     outputs=[
         gr.Textbox(label="Prediction"),
-        gr.Label(num_top_classes=len(CLASSES), label="Class probabilities")
-    ],
-    title="Cat vs Dog Classifier",
-    flagging_mode="never"          # was allow_flagging
-   
-)
-
-if __name__ == "__main__":
-    demo.launch(share=True)
+        gr.Label(
