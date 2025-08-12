@@ -66,4 +66,11 @@ demo = gr.Interface(
     inputs=gr.Image(type="pil", label="Upload a cat or dog"),
     outputs=[
         gr.Textbox(label="Prediction"),
-        gr.Label(
+        gr.Label(num_top_classes=len(CLASSES), label="Class probabilities"),
+    ],
+    title="Cat vs Dog Classifier",
+    flagging_mode="never",
+)
+
+if __name__ == "__main__":
+    demo.launch()
