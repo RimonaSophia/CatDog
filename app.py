@@ -36,7 +36,7 @@ with open("artifacts/classes.json") as f:
 
 # Build + load weights
 model = build_model(num_classes=len(CLASSES))
-state = torch.load("artifacts/best_model_catdog.pt", map_location="cpu")  # <- ensure filename matches
+state = torch.load("artifacts/best_model_dogcat.pt", map_location="cpu")  # <- ensure filename matches
 model.load_state_dict(state, strict=True)
 model.to(DEVICE).eval()
 
