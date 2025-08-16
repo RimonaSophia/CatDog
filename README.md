@@ -1,3 +1,4 @@
+---
 title: Catdog
 emoji: 📈
 colorFrom: yellow
@@ -7,3 +8,4 @@ sdk_version: 5.42.0
 app_file: app.py
 pinned: false
 license: mit
+---
