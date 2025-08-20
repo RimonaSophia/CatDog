@@ -60,6 +60,17 @@ def predict(img: Image.Image):
         # Return readable error in the UI instead of crashing
         return f"Error: {type(e).__name__}: {e}", {}
 
+# --- built-in demo images users can click ---
+EXAMPLES = [
+    "examples/2.jpg",
+    "examples/10.jpg",
+    "examples/12.jpg",
+    "examples/15.jpg",
+    "examples/20.jpg",
+    "examples/21.jpg",
+]
+
+
 # ---------- Gradio UI ----------
 demo = gr.Interface(
     fn=predict,
@@ -69,6 +80,7 @@ demo = gr.Interface(
         gr.Label(num_top_classes=len(CLASSES), label="Class probabilities"),
     ],
     title="Cat vs Dog Classifier",
+    examples=EXAMPLES,  
     flagging_mode="never",
 )
 
