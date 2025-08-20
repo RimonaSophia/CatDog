@@ -81,7 +81,8 @@ demo = gr.Interface(
     ],
     title="Cat vs Dog Classifier",
     examples=EXAMPLES,  
-    flagging_mode="never",
+    flagging_mode="never"
+    cache_examples=False,
 )
 
 if __name__ == "__main__":
