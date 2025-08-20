@@ -65,7 +65,7 @@ EXAMPLES = [
     "examples/2.jpg",
     "examples/10.jpg",
     "examples/12.jpg",
-    "examples/15.jpg",
+    "examples/15.jpg.icloud",
     "examples/20.jpg",
     "examples/21.jpg",
 ]
