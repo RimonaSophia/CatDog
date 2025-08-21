@@ -5,21 +5,17 @@ from torchvision import models, transforms
 from PIL import Image
 import gradio as gr
 
-# ---------- Device ----------
-DEVICE = torch.device("cpu")  # Spaces CPU is fine; change if you enable GPU
+# Device 
+DEVICE = torch.device("cpu")  
 
-# ---------- Transforms ----------
-# IMPORTANT: match whatever you used at validation/inference time during training.
+#  Transforms 
 TF = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    # If you trained with ImageNet normalization, uncomment:
-    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-# ---------- Model ----------
+# Model
 def build_model(num_classes=2):
-    # Use weights API when available; fallback to pretrained=True for older torchvision
     try:
         weights = models.ResNet18_Weights.DEFAULT
         m = models.resnet18(weights=weights)
@@ -32,23 +28,19 @@ def build_model(num_classes=2):
 
 # Load classes
 with open("artifacts/classes.json") as f:
-    CLASSES = json.load(f)  # e.g. ["cats", "dogs"]
+    CLASSES = json.load(f)  
 
 # Build + load weights
 model = build_model(num_classes=len(CLASSES))
-state = torch.load("artifacts/best_model_dogcat.pt", map_location="cpu")  # <- ensure filename matches
+state = torch.load("artifacts/best_model_dogcat.pt", map_location="cpu")  
 model.load_state_dict(state, strict=True)
 model.to(DEVICE).eval()
 
-# Optional: warmup to surface any runtime errors early (e.g., missing files)
-with torch.inference_mode():
-    _ = model(torch.zeros(1, 3, 224, 224))
-
-# ---------- Prediction ----------
+# Prediction 
 @torch.inference_mode()
 def predict(img: Image.Image):
     try:
-        x = TF(img.convert("RGB")).unsqueeze(0).to(DEVICE)  # [1,3,224,224]
+        x = TF(img.convert("RGB")).unsqueeze(0).to(DEVICE)  
         logits = model(x)  # <-- fixed: use `model`, not `MODEL`
         probs = torch.softmax(logits, dim=1)[0].cpu().tolist()
         idx = int(torch.tensor(probs).argmax().item())
@@ -60,7 +52,7 @@ def predict(img: Image.Image):
         # Return readable error in the UI instead of crashing
         return f"Error: {type(e).__name__}: {e}", {}
 
-# --- built-in demo images users can click ---
+# built-in demo images users can click 
 EXAMPLES = [
     "examples/2.jpg",
     "examples/10.jpg",
@@ -70,7 +62,7 @@ EXAMPLES = [
 ]
 
 
-# ---------- Gradio UI ----------
+# Gradio UI 
 demo = gr.Interface(
     fn=predict,
     inputs=gr.Image(type="pil", label="Upload a cat or dog"),
